@@ -3,17 +3,19 @@
 
 namespace RunningMan
 {
+static int promise_id = 0;
 
 template<typename T>
 inline Promise<T>::Promise(callback_t<T> callback)
 {
+  id = promise_id++;
   try {
     callback([this](auto v){
       PromiseEngine::enqueue([this, v]() {
         //_resolve(std::forward<decltype(v)>(v));
         _resolve(v);
       });
-    }, [this](auto&& e){
+    }, [this](auto e){
       PromiseEngine::enqueue([this, e]() {
         //_reject(std::forward<decltype(e)>(e));
         _reject(e);
@@ -24,11 +26,17 @@ inline Promise<T>::Promise(callback_t<T> callback)
   }
 }
 
+template<typename T>
+inline Promise<T>::~Promise()
+{
+  std::cout << "destructing " << id << std::endl;
+}
+
 template <typename T>
 template <typename U>
-Promise<U>* Promise<T>::then(std::function<U(T)> cb)
+Promise<U> Promise<T>::then(std::function<U(T)> cb)
 {
-  return new Promise<U>([this, cb](auto resolve, auto reject) {
+  return Promise<U>([this, cb](auto resolve, auto reject) {
       if (state == PromiseStates::Fulfilled) {
         try {
           resolve(cb(value));

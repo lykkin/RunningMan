@@ -28,12 +28,14 @@ class Promise
 {
 public:
   inline Promise(callback_t<T>);
+  inline ~Promise();
 
   template <typename U>
-  Promise<U>* then(std::function<U(T)>);
+  Promise<U> then(std::function<U(T)>);
 
 private:
   T value;
+  int id;
   PromiseStates state = PromiseStates::Pending;
   std::vector<resolve_cb_t<T>> thenHandlers;
   std::vector<reject_cb_t> catchHandlers;

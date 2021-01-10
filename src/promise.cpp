@@ -1,4 +1,5 @@
 #include "../include/promise.h"
+#include "./promise_engine.cpp"
 
 namespace RunningMan
 {
@@ -7,7 +8,17 @@ template<typename T>
 inline Promise<T>::Promise(callback_t<T> callback)
 {
   try {
-    callback([this](auto&& v){_resolve(std::forward<decltype(v)>(v));}, [this](auto&& e){_reject(std::forward<decltype(e)>(e));});
+    callback([this](auto v){
+      PromiseEngine::enqueue([this, v]() {
+        //_resolve(std::forward<decltype(v)>(v));
+        _resolve(v);
+      });
+    }, [this](auto&& e){
+      PromiseEngine::enqueue([this, e]() {
+        //_reject(std::forward<decltype(e)>(e));
+        _reject(e);
+      });
+    });
   } catch (...) {
     _reject(std::current_exception());
   }
@@ -15,19 +26,19 @@ inline Promise<T>::Promise(callback_t<T> callback)
 
 template <typename T>
 template <typename U>
-Promise<U> Promise<T>::then(std::function<U(T)> cb)
+Promise<U>* Promise<T>::then(std::function<U(T)> cb)
 {
-  return Promise<U>([this, cb](auto resolve, auto reject) {
-      if (state == PromiseStates::Resolved) {
+  return new Promise<U>([this, cb](auto resolve, auto reject) {
+      if (state == PromiseStates::Fulfilled) {
         try {
-          resolve(cb(_val));
+          resolve(cb(value));
         } catch (...) {
           reject(std::current_exception());
         }
       } else if (state == PromiseStates::Pending) {
         thenHandlers.push_back([this, resolve, reject, cb](T v){
           try {
-            resolve(cb(_val));
+            resolve(cb(value));
           } catch (...) {
             reject(std::current_exception());
           }
@@ -39,13 +50,13 @@ Promise<U> Promise<T>::then(std::function<U(T)> cb)
 template<typename T>
 void Promise<T>::_resolve(T val)
 {
-  _val = val;
   if (state > PromiseStates::Pending) {
     return;
   }
-  state = PromiseStates::Resolved;
+  value = val;
+  state = PromiseStates::Fulfilled;
   for (auto h : thenHandlers) {
-    h(val);
+      h(val);
   }
 }
 

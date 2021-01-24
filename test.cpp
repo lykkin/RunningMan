@@ -1,11 +1,11 @@
 #include <iostream>
 #include "./src/promise.cpp"
 int main() {
-  auto&& p = RunningMan::Promise<int>([](auto resolve, auto reject) {
+  RunningMan::Promise<int>([](auto resolve, auto reject) {
       std::cout << "cons" << std::endl;
       resolve(2);
   }).then<bool>([](int v) {
-  std::cout << "first then " << v << std::endl;
+    std::cout << "first then " << v << std::endl;
     return true;
   }).then<int>([](bool b) {
     std::cout << "second then " << b << std::endl;

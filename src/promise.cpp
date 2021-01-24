@@ -1,4 +1,5 @@
 #include "../include/promise.h"
+#include <iostream>
 #include "./promise_engine.cpp"
 
 namespace RunningMan
@@ -8,45 +9,46 @@ static int promise_id = 0;
 template<typename T>
 inline Promise<T>::Promise(callback_t<T> callback)
 {
-  id = promise_id++;
+  data = std::make_shared<PromiseData>();
+  data->id = promise_id++;
   try {
-    callback([this](auto v){
-      PromiseEngine::enqueue([this, v]() {
+    callback([data{this->data}](auto v){
+      PromiseEngine::enqueue([data, v]() {
         //_resolve(std::forward<decltype(v)>(v));
-        _resolve(v);
+        data->_resolve(v);
       });
-    }, [this](auto e){
-      PromiseEngine::enqueue([this, e]() {
+    }, [data{this->data}](auto e){
+      PromiseEngine::enqueue([data, e]() {
         //_reject(std::forward<decltype(e)>(e));
-        _reject(e);
+        data->_reject(e);
       });
     });
   } catch (...) {
-    _reject(std::current_exception());
+    data->_reject(std::current_exception());
   }
 }
 
 template<typename T>
 inline Promise<T>::~Promise()
 {
-  std::cout << "destructing " << id << std::endl;
+  std::cout << "destructing " << data->id << std::endl;
 }
 
 template <typename T>
 template <typename U>
 Promise<U> Promise<T>::then(std::function<U(T)> cb)
 {
-  return Promise<U>([this, cb](auto resolve, auto reject) {
-      if (state == PromiseStates::Fulfilled) {
+  return Promise<U>([data{this->data}, cb](auto resolve, auto reject) {
+      if (data->state == PromiseStates::Fulfilled) {
         try {
-          resolve(cb(value));
+          resolve(cb(data->value));
         } catch (...) {
           reject(std::current_exception());
         }
-      } else if (state == PromiseStates::Pending) {
-        thenHandlers.push_back([this, resolve, reject, cb](T v){
+      } else if (data->state == PromiseStates::Pending) {
+        data->thenHandlers.push_back([data, resolve, reject, cb](T v){
           try {
-            resolve(cb(value));
+            resolve(cb(data->value));
           } catch (...) {
             reject(std::current_exception());
           }
@@ -56,7 +58,7 @@ Promise<U> Promise<T>::then(std::function<U(T)> cb)
 }
 
 template<typename T>
-void Promise<T>::_resolve(T val)
+void Promise<T>::PromiseData::_resolve(T val)
 {
   if (state > PromiseStates::Pending) {
     return;
@@ -69,7 +71,7 @@ void Promise<T>::_resolve(T val)
 }
 
 template<typename T>
-void Promise<T>::_reject(const std::exception_ptr& e)
+void Promise<T>::PromiseData::_reject(const std::exception_ptr& e)
 {
   // do something if we have no handlers
   if (state > PromiseStates::Pending) {

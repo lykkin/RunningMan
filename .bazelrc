@@ -1,0 +1,2 @@
+build --cxxopt='-std=c++20' --cxxopt='-Wall' --cxxopt='-Werror' --cxxopt='-fdiagnostics-color=always'
+test --test_output=errors --compilation_mode=dbg

@@ -1,0 +1,3 @@
+.PHONY: test
+test:
+	bazel test test/...

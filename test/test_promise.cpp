@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
 #include "running-man/promise.h"
 #include "running-man/promise_engine.h"
+#include "gtest/gtest.h"
 
 TEST(PromiseTest, ResolveTest) {
   int result = 0;
@@ -19,11 +19,9 @@ TEST(PromiseTest, ResolveTest) {
 TEST(PromiseTest, VoidTest) {
   int calls = 0;
   RunningMan::Promise<void>([&](auto resolve, auto reject) {
-      calls++;
-      resolve();
-  }).then<void>([&]() {
-      calls++;
-  });
+    calls++;
+    resolve();
+  }).then<void>([&]() { calls++; });
   while (!RunningMan::PromiseEngine::isDone()) {
     RunningMan::PromiseEngine::run();
   }
@@ -33,15 +31,17 @@ TEST(PromiseTest, VoidTest) {
 TEST(PromiseTest, VoidToValueTest) {
   int calls = 0;
   RunningMan::Promise<void>([&](auto resolve, auto reject) {
-      calls++;
-      resolve();
-  }).then<int>([&]() {
-      calls++;
-      return 1;
-  }).then<void>([&](auto v) {
-      calls++;
-      EXPECT_EQ(v, 1);
-  });
+    calls++;
+    resolve();
+  })
+      .then<int>([&]() {
+        calls++;
+        return 1;
+      })
+      .then<void>([&](auto v) {
+        calls++;
+        EXPECT_EQ(v, 1);
+      });
   while (!RunningMan::PromiseEngine::isDone()) {
     RunningMan::PromiseEngine::run();
   }
@@ -51,15 +51,17 @@ TEST(PromiseTest, VoidToValueTest) {
 TEST(PromiseTest, ValueToVoidTest) {
   int calls = 0;
   RunningMan::Promise<int>([&](auto resolve, auto reject) {
-      calls++;
-      resolve(1);
-  }).then<void>([&](auto v) {
-      EXPECT_EQ(v, 1);
-      calls++;
-  }).then<int>([&]() {
-      calls++;
-      return 0;
-  });
+    calls++;
+    resolve(1);
+  })
+      .then<void>([&](auto v) {
+        EXPECT_EQ(v, 1);
+        calls++;
+      })
+      .then<int>([&]() {
+        calls++;
+        return 0;
+      });
   while (!RunningMan::PromiseEngine::isDone()) {
     RunningMan::PromiseEngine::run();
   }
@@ -67,7 +69,7 @@ TEST(PromiseTest, ValueToVoidTest) {
 }
 
 // TODO: get this working
-//TEST(PromiseTest, DefaultTest) {
+// TEST(PromiseTest, DefaultTest) {
 //  int calls = 0;
 //  RunningMan::Promise([&](auto resolve, auto reject) -> void {
 //      calls++;

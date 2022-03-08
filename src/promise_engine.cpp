@@ -1,17 +1,13 @@
 #include "running-man/promise_engine.h"
 
-namespace RunningMan
-{
-void PromiseEngine::enqueue(Task t)
-{
+namespace RunningMan {
+void PromiseEngine::enqueue(Task t) {
   done = false;
   tasks.push_back(t);
 }
 
-void PromiseEngine::run()
-{
-  for (int jobs = tasks.size(); jobs > 0; jobs--)
-  {
+void PromiseEngine::run() {
+  for (int jobs = tasks.size(); jobs > 0; jobs--) {
     auto task = tasks.front();
     tasks.pop_front();
     task();
@@ -23,8 +19,5 @@ std::deque<Task> PromiseEngine::tasks = std::deque<Task>();
 
 bool PromiseEngine::done = true;
 
-bool PromiseEngine::isDone()
-{
-  return done;
-}
+bool PromiseEngine::isDone() { return done; }
 } // end namespace RunningMan
